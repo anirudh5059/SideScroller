@@ -15,7 +15,8 @@ class MDEntity
     // Event handler for key presses
     void handle_event( SDL_Event& e );
     // TODO: Add collision detection logic to move function
-    bool move( int max_width, int max_height, std::vector< Obstacle > obstacles );
+    bool move( int max_width, int max_height, Obstacle obstacles[],
+               int num_obstcls );
     bool check_collision( SDL_Rect& rect);
     void inc_rad();
     void dec_rad();

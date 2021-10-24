@@ -10,7 +10,7 @@ MDEntity::MDEntity( int _x, int _y, int _min_radius, int _max_radius )
     srand( SDL_GetTicks() );
     cur_rad = min_rad + rand() % ( max_rad - min_rad + 1 );
     // Debug
-    printf( "The current radius chosen is %d\n", cur_rad );
+    //printf( "The current radius chosen is %d\n", cur_rad );
 }
 
 int MDEntity::get_min_rad()
@@ -164,7 +164,8 @@ bool MDEntity::check_collision( SDL_Rect& rect )
     }
 }
 
-bool MDEntity::move( int max_width, int max_height, std::vector< Obstacle >  obstacles )
+bool MDEntity::move( int max_width, int max_height, Obstacle obstacles[],
+                     int num_obstcls )
 {
     cen_x += vel_x;
     // If a collision occurred, move back
@@ -181,11 +182,14 @@ bool MDEntity::move( int max_width, int max_height, std::vector< Obstacle >  obs
     }
 
     // Check for collisions amongst all obstacles
-    for( auto i : obstacles)
+    for( int i = 0; i < num_obstcls; ++i )
     {
-        if( check_collision( i.get_rect() ) )
+        if( obstacles[i].is_active() )
         {
-            return false;
+            if( check_collision( obstacles[i].get_rect() ) )
+            {
+                return false;
+            }
         }
     }
 

@@ -10,7 +10,7 @@ const int SCREEN_HEIGHT=480;
 
 SDL_Window* glob_win;
 SDL_Renderer* glob_renderer;
-const int INTERVAL = 4000;
+const int INTERVAL = 3000;
 const int MAX_OBSTCLS = 5;
 
 bool init( bool png_load=false )
@@ -70,22 +70,40 @@ bool init( bool png_load=false )
     return init;
 }
 
+void inc_mod( int& idx, int base )
+{
+    idx = ( ( ++idx ) % base );
+}
+
 int main()
 {
     if ( !init() )
     {
+
         printf( "Could not initialize, exiting\n" );
         return (-1);
     }
 
     MDEntity ent( 100, 100, 20, 100 );
-    std::vector< Obstacle > obstacles;
-    obstacles.push_back( Obstacle ( 600, 10, 20, 250 ) );
+    Obstacle obstacles[ MAX_OBSTCLS ];
+    int OBS_IDX = 0;
+
+    /*
+    for( int i = 0; i < MAX_OBSTCLS; ++i)
+    {
+        obstacles[i] = new Obstacle();
+    }
+    */
+
+    //obstacles.push_back( Obstacle ( 600, 10, 20, 250 ) );
     //Obstacle obstcl( 600, 10, 20, 250 );
     SDL_Event e;
     Uint32 start_ticks = 0;
     srand(SDL_GetTicks());
     bool quit = false;
+
+    obstacles[ OBS_IDX ].resuscitate( 600, 10, 20, 200, -1 );
+    inc_mod( OBS_IDX, MAX_OBSTCLS );
     while( !quit )
     {
         while( SDL_PollEvent( &e ) != 0 )
@@ -101,29 +119,37 @@ int main()
         // Timer to perform obstacle addition every INTERVAL milliseconds.
         if( SDL_GetTicks() - start_ticks > INTERVAL )
         {
+            // Debug
+            //printf( "The current obstacle Index %d\n", OBS_IDX );
+            /*
             int obstcl_height = 100 + ( rand() % ( SCREEN_HEIGHT
                                                    -100 
                                                    - 5 * ent.get_min_rad()
                                                    + 1 ) );
+            */
+            int obstcl_height = 200;
             int obstcl_pos_y = rand() % ( SCREEN_HEIGHT - obstcl_height + 1 );
+            obstacles[ OBS_IDX ].resuscitate( 600, obstcl_pos_y, 20, obstcl_height, -1 );
+            inc_mod( OBS_IDX, MAX_OBSTCLS );
+            /*
             if ( obstacles.size() > MAX_OBSTCLS )
             {
                 obstacles.erase( obstacles.begin() );
             }
             obstacles.push_back( Obstacle(600, obstcl_pos_y, 20, obstcl_height ) );
+            */
             start_ticks = SDL_GetTicks();
         }
 
         // Move the obstacle
-        for( std::vector< Obstacle >::iterator i = obstacles.begin();
-             i < obstacles.end(); ++i )
+        for( int i = 0; i < MAX_OBSTCLS; ++i )
         {
-            (*i).move();
+            obstacles[i].move();
         }
 
         //obstcl.move()
         // Move our entity around
-        if( !ent.move( SCREEN_WIDTH, SCREEN_HEIGHT, obstacles ) )
+        if( !ent.move( SCREEN_WIDTH, SCREEN_HEIGHT, obstacles, MAX_OBSTCLS ) )
         {
             quit = 1;
         }
@@ -136,10 +162,9 @@ int main()
         SDL_SetRenderDrawColor( glob_renderer, 0x00, 0x00, 0x00, 0xFF);
 
         // Render all obstacles
-        for( std::vector< Obstacle >::iterator i = obstacles.begin();
-             i < obstacles.end(); ++i )
+        for( int i = 0; i < MAX_OBSTCLS; ++i )
         {
-            (*i).render( glob_renderer );
+            obstacles[i].render( glob_renderer );
         }
         //obstcl.render( glob_renderer );
         ent.render( glob_renderer );
