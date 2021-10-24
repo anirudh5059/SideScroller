@@ -1,4 +1,5 @@
 #include<SDL.h>
+#include"texture.hpp"
 
 #ifndef __OBSTACLE_H__
 #define __OBSTACLE_H__
@@ -6,7 +7,7 @@ class Obstacle
 {
   public:
     Obstacle();
-    void render( SDL_Renderer* renderer );
+    void render( SDL_Renderer* renderer, Texture& sprite );
     void move();
     SDL_Rect& get_rect();
     void incapacitate();

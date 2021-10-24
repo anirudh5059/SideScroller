@@ -36,7 +36,7 @@ int Texture::get_height()
     return height;
 }
 
-bool Texture::loadPath( std::string path)
+bool Texture::load_path( std::string path, bool color_key )
 {
     // First create an SDL_Surface, then create an SDL_Texture from that which
     // will be rendered in the GPU hardware
@@ -51,8 +51,11 @@ bool Texture::loadPath( std::string path)
     {
         // Color keying allows us to specify which color in the surface to
         // treat as transparent while rendering
-	    SDL_SetColorKey( local_surface, SDL_TRUE,
-                         SDL_MapRGB( local_surface->format, 0, 0xFF, 0xFF ) );
+        if( color_key )
+        {
+	        SDL_SetColorKey( local_surface, SDL_TRUE,
+                        SDL_MapRGB( local_surface->format, 0x00, 0x00, 0x00 ) );
+        }
 
         //Converting surface to texture
         local_texture = SDL_CreateTextureFromSurface( renderer, local_surface );
@@ -73,11 +76,17 @@ bool Texture::loadPath( std::string path)
     return raw_texture != NULL;
 }
 
-void Texture::render( int x, int y, SDL_Rect* clip )
+void Texture::render( int x, int y, SDL_Rect* clip, SDL_Rect* out )
 {
     // Stack variable so we don't have to free it!
     SDL_Rect render_quad = { x, y, width, height };
 
+    // If output dimensions are defined, use them
+    if( out != NULL)
+    {
+        render_quad.w = out->w;
+        render_quad.h = out->h;
+    }
     // Clip is used as a mask to the part of the texture to be rendered
     if( clip != NULL)
     {

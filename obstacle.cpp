@@ -16,11 +16,11 @@ void Obstacle::move()
     }
 }
 
-void Obstacle::render( SDL_Renderer* renderer )
+void Obstacle::render( SDL_Renderer* renderer, Texture& sprite )
 {
     if( active )
     {
-        SDL_RenderDrawRect( renderer, &rect );
+        sprite.render( rect.x, rect.y, NULL, &rect );
     }
 }
 

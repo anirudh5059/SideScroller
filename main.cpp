@@ -4,6 +4,7 @@
 #include<vector>
 #include"entity.hpp"
 #include"obstacle.hpp"
+#include"texture.hpp"
 
 const int SCREEN_WIDTH=640;
 const int SCREEN_HEIGHT=480;
@@ -12,6 +13,14 @@ SDL_Window* glob_win;
 SDL_Renderer* glob_renderer;
 const int INTERVAL = 3000;
 const int MAX_OBSTCLS = 5;
+const int OBSTCL_WIDTH = 40;
+const int OBSTCL_HEIGHT = 250;
+const int OBSTCL_X = 600;
+const int OBSTCL_VEL = -1;
+const int ENT_X = 100;
+const int ENT_Y = 100;
+const int ENT_MIN_R = 20;
+const int ENT_MAX_R = 120;
 
 bool init( bool png_load=false )
 {
@@ -53,6 +62,7 @@ bool init( bool png_load=false )
             else
             {
                 SDL_SetRenderDrawColor( glob_renderer, 0xFF, 0xFF, 0xFF, 0xFF );
+
                 // Load the SDL_Image functionality if required
                 if( png_load )
                 {
@@ -70,6 +80,19 @@ bool init( bool png_load=false )
     return init;
 }
 
+bool load( Texture& back, Texture& sprite, std::string path_back,
+           std::string path_sprite )
+{
+    if( !back.load_path( path_back.c_str() ) )
+    {
+        printf( "Error loading background\n" );
+    }
+    if( !sprite.load_path( path_sprite.c_str(), true ) )
+    {
+        printf( "Error loading column sprite\n" );
+    }
+}
+
 void inc_mod( int& idx, int base )
 {
     idx = ( ( ++idx ) % base );
@@ -77,14 +100,19 @@ void inc_mod( int& idx, int base )
 
 int main()
 {
-    if ( !init() )
+    if ( !init( true) )
     {
 
         printf( "Could not initialize, exiting\n" );
         return (-1);
     }
 
-    MDEntity ent( 100, 100, 20, 100 );
+    Texture background( glob_renderer ); 
+    Texture sprite( glob_renderer ); 
+    
+    load( background, sprite, "images/back2.png", "images/column_sprite.png" );
+
+    MDEntity ent( ENT_X, ENT_Y, ENT_MIN_R, ENT_MAX_R );
     Obstacle obstacles[ MAX_OBSTCLS ];
     int OBS_IDX = 0;
 
@@ -102,7 +130,7 @@ int main()
     srand(SDL_GetTicks());
     bool quit = false;
 
-    obstacles[ OBS_IDX ].resuscitate( 600, 10, 20, 200, -1 );
+    obstacles[ OBS_IDX ].resuscitate( OBSTCL_X, 10, OBSTCL_WIDTH, OBSTCL_HEIGHT, OBSTCL_VEL );
     inc_mod( OBS_IDX, MAX_OBSTCLS );
     while( !quit )
     {
@@ -127,9 +155,8 @@ int main()
                                                    - 5 * ent.get_min_rad()
                                                    + 1 ) );
             */
-            int obstcl_height = 200;
-            int obstcl_pos_y = rand() % ( SCREEN_HEIGHT - obstcl_height + 1 );
-            obstacles[ OBS_IDX ].resuscitate( 600, obstcl_pos_y, 20, obstcl_height, -1 );
+            int obstcl_pos_y = rand() % ( SCREEN_HEIGHT - OBSTCL_HEIGHT + 1 );
+            obstacles[ OBS_IDX ].resuscitate( OBSTCL_X, obstcl_pos_y, OBSTCL_WIDTH, OBSTCL_HEIGHT, -1 );
             inc_mod( OBS_IDX, MAX_OBSTCLS );
             /*
             if ( obstacles.size() > MAX_OBSTCLS )
@@ -158,13 +185,21 @@ int main()
         SDL_SetRenderDrawColor( glob_renderer, 0xFF, 0xFF, 0xFF, 0xFF);
         SDL_RenderClear( glob_renderer );
 
+        background.render( 0, 0, NULL, NULL ); 
+
         // Render the obstacle rectangle and the entity circle
-        SDL_SetRenderDrawColor( glob_renderer, 0x00, 0x00, 0x00, 0xFF);
+        // Forest green
+        //SDL_SetRenderDrawColor( glob_renderer, 0x1F, 0x7D, 0x1F, 0xFF);
+        // Evening Blue
+        //SDL_SetRenderDrawColor( glob_renderer, 0x01, 0x4F, 0x94, 0xFF);
+        // Light blue
+        SDL_SetRenderDrawColor( glob_renderer, 0xAD, 0xD8, 0xE6, 0xFF);
+        //SDL_SetRenderDrawColor( glob_renderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
         // Render all obstacles
         for( int i = 0; i < MAX_OBSTCLS; ++i )
         {
-            obstacles[i].render( glob_renderer );
+            obstacles[i].render( glob_renderer, sprite );
         }
         //obstcl.render( glob_renderer );
         ent.render( glob_renderer );
