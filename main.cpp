@@ -131,6 +131,7 @@ int main()
     bool quit = false;
 
     obstacles[ OBS_IDX ].resuscitate( OBSTCL_X, 10, OBSTCL_WIDTH, OBSTCL_HEIGHT, OBSTCL_VEL );
+    obstacles[ OBS_IDX ].attach_sprite( &sprite );
     inc_mod( OBS_IDX, MAX_OBSTCLS );
     while( !quit )
     {
@@ -157,6 +158,7 @@ int main()
             */
             int obstcl_pos_y = rand() % ( SCREEN_HEIGHT - OBSTCL_HEIGHT + 1 );
             obstacles[ OBS_IDX ].resuscitate( OBSTCL_X, obstcl_pos_y, OBSTCL_WIDTH, OBSTCL_HEIGHT, -1 );
+            obstacles[ OBS_IDX ].attach_sprite( &sprite );
             inc_mod( OBS_IDX, MAX_OBSTCLS );
             /*
             if ( obstacles.size() > MAX_OBSTCLS )
@@ -199,7 +201,7 @@ int main()
         // Render all obstacles
         for( int i = 0; i < MAX_OBSTCLS; ++i )
         {
-            obstacles[i].render( glob_renderer, sprite );
+            obstacles[i].render( glob_renderer );
         }
         //obstcl.render( glob_renderer );
         ent.render( glob_renderer );

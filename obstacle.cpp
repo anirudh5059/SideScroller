@@ -2,7 +2,7 @@
 #include"obstacle.hpp"
 
 Obstacle::Obstacle()
-    : rect{ 0, 0, 0, 0 }, vel( 0 ), active( false ) {}
+    : rect{ 0, 0, 0, 0 }, vel( 0 ), active( false ), render_tex( NULL ) {}
 
 void Obstacle::move()
 {
@@ -16,11 +16,11 @@ void Obstacle::move()
     }
 }
 
-void Obstacle::render( SDL_Renderer* renderer, Texture& sprite )
+void Obstacle::render( SDL_Renderer* renderer )
 {
     if( active )
     {
-        sprite.render( rect.x, rect.y, NULL, &rect );
+        ( *render_tex ).render( rect.x, rect.y, NULL, &rect );
     }
 }
 
@@ -52,4 +52,9 @@ void Obstacle::resuscitate(int _x, int _y, int _w, int _h, int _vel)
 bool Obstacle::is_active()
 {
     return active;
+}
+
+void Obstacle::attach_sprite( Texture* tex_ref )
+{
+    render_tex = tex_ref;
 }
