@@ -1,0 +1,21 @@
+Dependencies:
+
+The app requires the development libraries for SDL2 and SDL2_Image.
+The app is tested on the linux environment.
+For ubuntu repositories, the requisite packages are called libsdl2-dev
+and libsdl2-image-dev respectively, thus running the following commands
+resolves both dependencies.
+
+sudo apt-get install libsdl2-dev
+sudo apt-get install libsdl2-image-dev
+
+Building:
+
+The project has a single makefile in the source directory.  If you are on a
+linux based system, simply running 'make' builds all requirements and creates
+an 'app' file which can be run.
+
+Running:
+
+Simply execute the 'app' object created.
+
