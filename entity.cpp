@@ -1,37 +1,16 @@
 #include<SDL.h>
-#include<cstdlib>
+//#include<cstdlib>
 #include"entity.hpp"
 #include"obstacle.hpp"
+#include<algorithm>
 
-MDEntity::MDEntity( int _x, int _y, int _min_radius, int _max_radius ) 
-    : cen_x(_x), cen_y(_y), min_rad(_min_radius), max_rad(_max_radius),
-      vel_x(0), vel_y(0)
-{
-    srand( SDL_GetTicks() );
-    cur_rad = min_rad + rand() % ( max_rad - min_rad + 1 );
-    // Debug
-    //printf( "The current radius chosen is %d\n", cur_rad );
-}
+MDEntity::MDEntity( int _min_radius, int _max_radius ) 
+    : cen_x(0), cen_y(0), min_rad(_min_radius), max_rad(_max_radius),
+      vel_x(0), vel_y(0), rad_inc_rate(0) {}
 
 int MDEntity::get_min_rad()
 {
     return min_rad;
-}
-
-void MDEntity::inc_rad()
-{
-    if ( cur_rad + 2 <= max_rad )
-    {
-        cur_rad += 2;
-    }
-}
-
-void MDEntity::dec_rad()
-{
-    if ( cur_rad - 2 >= min_rad )
-    {
-        cur_rad -= 2;
-    }
 }
 
 void MDEntity::render( SDL_Renderer* renderer )
@@ -73,30 +52,21 @@ void MDEntity::render( SDL_Renderer* renderer )
 void MDEntity::handle_event( SDL_Event& e )
 {
     // Key pressed, not recording already pressed response.
-    if( e.type == SDL_KEYDOWN )
+    if( ( e.type == SDL_KEYDOWN ) && ( e.key.repeat == 0 ) )
     {
-        if ( e.key.repeat == 0 )
+        switch( e.key.keysym.sym )
         {
-            switch( e.key.keysym.sym )
-            {
-                case SDLK_UP: vel_y -= AX_VEL; break;
-                case SDLK_DOWN: vel_y += AX_VEL; break;
-                case SDLK_LEFT: vel_x -= AX_VEL; break;
-                case SDLK_RIGHT: vel_x += AX_VEL; break;
-            }
-        }
-        else
-        {
-            switch( e.key.keysym.sym )
-            {
-                case SDLK_q: inc_rad(); break;
-                case SDLK_w: dec_rad(); break;
-            }
+            case SDLK_UP: vel_y -= AX_VEL; break;
+            case SDLK_DOWN: vel_y += AX_VEL; break;
+            case SDLK_LEFT: vel_x -= AX_VEL; break;
+            case SDLK_RIGHT: vel_x += AX_VEL; break;
+            case SDLK_q: rad_inc_rate += RAD_VEL; break;
+            case SDLK_w: rad_inc_rate -= RAD_VEL; break;
         }
     } 
 
     // Key released, not recording already released response.
-    else if( e.type == SDL_KEYUP && e.key.repeat == 0 )
+    else if( ( e.type == SDL_KEYUP ) && ( e.key.repeat == 0 ) )
     {
         switch( e.key.keysym.sym )
         {
@@ -104,6 +74,8 @@ void MDEntity::handle_event( SDL_Event& e )
             case SDLK_DOWN: vel_y -= AX_VEL; break;
             case SDLK_LEFT: vel_x += AX_VEL; break;
             case SDLK_RIGHT: vel_x -= AX_VEL; break;
+            case SDLK_q: rad_inc_rate -= RAD_VEL; break;
+            case SDLK_w: rad_inc_rate += RAD_VEL; break;
         }
     } 
 }
@@ -181,6 +153,17 @@ bool MDEntity::move( int max_width, int max_height, Obstacle obstacles[],
         cen_y -= vel_y;
     }
 
+    cur_rad += rad_inc_rate;
+    if ( ( cur_rad + rad_inc_rate > max_rad )
+         || ( cur_rad + rad_inc_rate < 0 )
+         || ( cen_x + cur_rad + rad_inc_rate > max_width )
+         || ( cen_x - cur_rad - rad_inc_rate  < 0 )
+         || ( cen_y + cur_rad + rad_inc_rate > max_height )
+         || ( cen_y - cur_rad - rad_inc_rate  < 0 ) )
+    {
+        cur_rad -= rad_inc_rate;
+    }
+
     // Check for collisions amongst all obstacles
     for( int i = 0; i < num_obstcls; ++i )
     {
@@ -194,4 +177,21 @@ bool MDEntity::move( int max_width, int max_height, Obstacle obstacles[],
     }
 
     return true;
+}
+
+bool comp( int a, int b )
+{
+    return( a < b );
+}
+
+void MDEntity::populate( int pos_x, int pos_y, int max_height, int max_width )
+{
+    cen_x = pos_x;
+    cen_y = pos_y;
+    srand( SDL_GetTicks() );
+    int eff_max_rad = std::min( { max_rad, cen_x, max_width - cen_x, cen_y,
+                                  max_height - cen_y } );
+    cur_rad = min_rad + rand() % ( eff_max_rad - min_rad + 1 );
+    // Debug
+    //printf( "The current radius chosen is %d\n", cur_rad );
 }

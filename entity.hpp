@@ -10,7 +10,9 @@ class MDEntity
   public:
     // Maximum axial velocity of entity
     static const int AX_VEL = 5;
-    MDEntity( int _x, int _y, int _min_radius, int _max_radius );
+    static const int RAD_VEL = 3;
+    MDEntity( int _min_radius, int _max_radius );
+    void populate( int x, int y, int max_width, int max_height );
     void render( SDL_Renderer* renderer);
     // Event handler for key presses
     void handle_event( SDL_Event& e );
@@ -18,11 +20,10 @@ class MDEntity
     bool move( int max_width, int max_height, Obstacle obstacles[],
                int num_obstcls );
     bool check_collision( SDL_Rect& rect);
-    void inc_rad();
-    void dec_rad();
     int get_min_rad();
 
   private:
+    int rad_inc_rate;
     int max_rad;
     int min_rad;
     int cur_rad;

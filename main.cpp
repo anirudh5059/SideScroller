@@ -112,7 +112,8 @@ int main()
     
     load( background, sprite, "images/back2.png", "images/column_sprite.png" );
 
-    MDEntity ent( ENT_X, ENT_Y, ENT_MIN_R, ENT_MAX_R );
+    MDEntity ent( ENT_MIN_R, ENT_MAX_R );
+    ent.populate( ENT_X, ENT_Y, SCREEN_WIDTH, SCREEN_HEIGHT );
     Obstacle obstacles[ MAX_OBSTCLS ];
     int OBS_IDX = 0;
 
