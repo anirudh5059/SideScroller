@@ -1,5 +1,5 @@
 #OBJS specifies which files to compile as part of the project
-OBJS = main.cpp entity.cpp obstacle.cpp texture.cpp
+OBJS = main.cpp entity.cpp obstacle.cpp texture.cpp utility.cpp consts.cpp
 
 #CC specifies which compiler we're using
 CC = g++

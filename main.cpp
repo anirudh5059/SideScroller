@@ -2,25 +2,16 @@
 #include<SDL_image.h>
 #include<string>
 #include<vector>
-#include"entity.hpp"
-#include"obstacle.hpp"
-#include"texture.hpp"
+#include "entity.hpp"
+#include "obstacle.hpp"
+#include "texture.hpp"
+#include "consts.hpp"
 
 const int SCREEN_WIDTH=640;
 const int SCREEN_HEIGHT=480;
 
 SDL_Window* glob_win;
 SDL_Renderer* glob_renderer;
-const int INTERVAL = 3000;
-const int MAX_OBSTCLS = 5;
-const int OBSTCL_WIDTH = 40;
-const int OBSTCL_HEIGHT = 250;
-const int OBSTCL_X = 600;
-const int OBSTCL_VEL = -1;
-const int ENT_X = 100;
-const int ENT_Y = 100;
-const int ENT_MIN_R = 20;
-const int ENT_MAX_R = 120;
 
 bool init( bool png_load=false )
 {
@@ -98,6 +89,41 @@ void inc_mod( int& idx, int base )
     idx = ( ( ++idx ) % base );
 }
 
+void generate_entities( int& obs_idx, int& pix_idx, Obstacle obstacles[], 
+                        Pixie pixies[], Texture& obstcl_sprite, 
+                        bool obstcl_ping )
+{
+    int pix_pos_y = 0;
+    if( obstcl_ping )
+    {
+        int obstcl_pos_y = rand() % ( SCREEN_HEIGHT - OBSTCL_HEIGHT + 1 );
+        obstacles[ obs_idx ].resuscitate( OBSTCL_X, obstcl_pos_y,
+                                          OBSTCL_WIDTH, OBSTCL_HEIGHT,
+                                          OBSTCL_VEL, IMMOBILE_VEL );
+        obstacles[ obs_idx ].attach_sprite( &obstcl_sprite );
+        inc_mod( obs_idx, MAX_OBSTCLS );
+        if( obstcl_pos_y < ( ( SCREEN_HEIGHT - OBSTCL_HEIGHT ) / 2 ) )
+        {
+            pix_pos_y = obstcl_pos_y + OBSTCL_HEIGHT + PIXIE_RAD + ( rand()
+                        % ( SCREEN_HEIGHT - obstcl_pos_y - OBSTCL_HEIGHT
+                            - 2 * ( PIXIE_RAD ) ) );
+        }
+        else
+        {
+            pix_pos_y = PIXIE_RAD + rand() % ( obstcl_pos_y
+                                               - 2 * ( PIXIE_RAD ) );
+        }
+    }
+    else
+    {
+        pix_pos_y = PIXIE_RAD + ( rand() % ( SCREEN_HEIGHT
+                                             - 2 * ( PIXIE_RAD ) ) );
+    }
+    pixies[ pix_idx ].resuscitate( OBSTCL_X, pix_pos_y, PIXIE_RAD,
+                                   OBSTCL_VEL, IMMOBILE_VEL );
+    inc_mod( pix_idx, MAX_PIXIES );
+}
+
 int main()
 {
     if ( !init( true) )
@@ -115,7 +141,9 @@ int main()
     MDEntity ent( ENT_MIN_R, ENT_MAX_R );
     ent.populate( ENT_X, ENT_Y, SCREEN_WIDTH, SCREEN_HEIGHT );
     Obstacle obstacles[ MAX_OBSTCLS ];
-    int OBS_IDX = 0;
+    Pixie pixies[ MAX_PIXIES ];
+    int obs_idx = 0;
+    int pix_idx = 0;
 
     /*
     for( int i = 0; i < MAX_OBSTCLS; ++i)
@@ -128,12 +156,16 @@ int main()
     //Obstacle obstcl( 600, 10, 20, 250 );
     SDL_Event e;
     Uint32 start_ticks = 0;
+    int interval_count = 0;
     srand(SDL_GetTicks());
     bool quit = false;
 
-    obstacles[ OBS_IDX ].resuscitate( OBSTCL_X, 10, OBSTCL_WIDTH, OBSTCL_HEIGHT, OBSTCL_VEL );
-    obstacles[ OBS_IDX ].attach_sprite( &sprite );
-    inc_mod( OBS_IDX, MAX_OBSTCLS );
+    obstacles[ obs_idx ].resuscitate( OBSTCL_X, OBSTCL_Y, OBSTCL_WIDTH,
+                                      OBSTCL_HEIGHT, OBSTCL_VEL, IMMOBILE_VEL );
+    obstacles[ obs_idx ].attach_sprite( &sprite );
+    inc_mod( obs_idx, MAX_OBSTCLS );
+    long long score = 0;
+    int move_res;
     while( !quit )
     {
         while( SDL_PollEvent( &e ) != 0 )
@@ -149,18 +181,24 @@ int main()
         // Timer to perform obstacle addition every INTERVAL milliseconds.
         if( SDL_GetTicks() - start_ticks > INTERVAL )
         {
+            interval_count++;
+            bool obstcl_ping = false;
+            if( interval_count > 4 )
+            {
+                obstcl_ping = true;
+                interval_count = 0;
+            }
+            start_ticks = SDL_GetTicks();
+            generate_entities( obs_idx, pix_idx, obstacles, pixies,
+                               sprite, obstcl_ping );
             // Debug
-            //printf( "The current obstacle Index %d\n", OBS_IDX );
+            //printf( "The current obstacle Index %d\n", obs_idx );
             /*
             int obstcl_height = 100 + ( rand() % ( SCREEN_HEIGHT
                                                    -100 
                                                    - 5 * ent.get_min_rad()
                                                    + 1 ) );
             */
-            int obstcl_pos_y = rand() % ( SCREEN_HEIGHT - OBSTCL_HEIGHT + 1 );
-            obstacles[ OBS_IDX ].resuscitate( OBSTCL_X, obstcl_pos_y, OBSTCL_WIDTH, OBSTCL_HEIGHT, -1 );
-            obstacles[ OBS_IDX ].attach_sprite( &sprite );
-            inc_mod( OBS_IDX, MAX_OBSTCLS );
             /*
             if ( obstacles.size() > MAX_OBSTCLS )
             {
@@ -168,20 +206,31 @@ int main()
             }
             obstacles.push_back( Obstacle(600, obstcl_pos_y, 20, obstcl_height ) );
             */
-            start_ticks = SDL_GetTicks();
         }
 
         // Move the obstacle
         for( int i = 0; i < MAX_OBSTCLS; ++i )
         {
-            obstacles[i].move();
+            obstacles[i].move( SCREEN_WIDTH, SCREEN_HEIGHT );
+        }
+
+        for( int i = 0; i < MAX_PIXIES; ++i )
+        {
+            pixies[i].move( SCREEN_WIDTH, SCREEN_HEIGHT );
         }
 
         //obstcl.move()
         // Move our entity around
-        if( !ent.move( SCREEN_WIDTH, SCREEN_HEIGHT, obstacles, MAX_OBSTCLS ) )
+        move_res = ent.move( SCREEN_WIDTH, SCREEN_HEIGHT, obstacles,
+                             MAX_OBSTCLS, pixies, MAX_PIXIES );
+
+        if( move_res == NEG_INF )
         {
             quit = 1;
+        }
+        else
+        {
+            score += move_res;
         }
 
         // Clear screen
@@ -203,6 +252,11 @@ int main()
         for( int i = 0; i < MAX_OBSTCLS; ++i )
         {
             obstacles[i].render( glob_renderer );
+        }
+
+        for( int i = 0; i < MAX_PIXIES; ++i )
+        {
+            pixies[i].render( glob_renderer );
         }
         //obstcl.render( glob_renderer );
         ent.render( glob_renderer );

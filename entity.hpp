@@ -17,10 +17,14 @@ class MDEntity
     // Event handler for key presses
     void handle_event( SDL_Event& e );
     // TODO: Add collision detection logic to move function
-    bool move( int max_width, int max_height, Obstacle obstacles[],
-               int num_obstcls );
-    bool check_collision( SDL_Rect& rect);
+    int move( int max_width, int max_height, Obstacle obstacles[],
+               int num_obstcls, Pixie pixies[], int num_pixies );
+    bool check_collision_obstcl( Obstacle& obstacle );
+    bool check_collision_pixie( Pixie& pixie);
     int get_min_rad();
+    int get_cen_x();
+    int get_cen_y();
+    int get_cur_rad();
 
   private:
     int rad_inc_rate;

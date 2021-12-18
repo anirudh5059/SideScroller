@@ -1,8 +1,10 @@
 #include<SDL.h>
-//#include<cstdlib>
 #include"entity.hpp"
 #include"obstacle.hpp"
+#include"utility.hpp"
 #include<algorithm>
+
+extern const int NEG_INF;
 
 MDEntity::MDEntity( int _min_radius, int _max_radius ) 
     : cen_x(0), cen_y(0), min_rad(_min_radius), max_rad(_max_radius),
@@ -13,40 +15,24 @@ int MDEntity::get_min_rad()
     return min_rad;
 }
 
+int MDEntity::get_cen_x()
+{
+    return cen_x;
+}
+
+int MDEntity::get_cen_y()
+{
+    return cen_y;
+}
+
+int MDEntity::get_cur_rad()
+{
+    return cur_rad;
+}
+
 void MDEntity::render( SDL_Renderer* renderer )
 {
-    // cs/sn are the x/y axis component of the circle beyond the center
-    int cs = cur_rad;
-    int sn = 0;
-    // Previous values of the above for recursive computation
-    int cs_prev;
-    int sn_prev;
-
-    while ( cs >= sn )
-    {
-        // Render one half quadrant, then replicate across all 8 half quadrants
-        SDL_RenderDrawPoint( renderer, cen_x + cs, cen_y + sn );
-        SDL_RenderDrawPoint( renderer, cen_x + cs, cen_y - sn );
-        SDL_RenderDrawPoint( renderer, cen_x - cs, cen_y + sn );
-        SDL_RenderDrawPoint( renderer, cen_x - cs, cen_y - sn );
-        SDL_RenderDrawPoint( renderer, cen_x + sn, cen_y + cs );
-        SDL_RenderDrawPoint( renderer, cen_x + sn, cen_y - cs );
-        SDL_RenderDrawPoint( renderer, cen_x - sn, cen_y + cs );
-        SDL_RenderDrawPoint( renderer, cen_x - sn, cen_y - cs );
-
-        // Upate the previous values
-        cs_prev = cs;
-        sn_prev = sn;
-
-        // Update the values of cs and sn using midpoint algorithm
-        // TODO: Make a doc
-        sn = sn_prev + 1;
-        if( (float)(cs_prev - 0.5)*(float)(cs_prev - 0.5) + sn_prev*sn_prev
-            - cur_rad*cur_rad > 0 )
-        {
-            cs = cs_prev - 1;
-        }
-    }
+    draw_circle( renderer, this );
 }
 
 void MDEntity::handle_event( SDL_Event& e )
@@ -80,8 +66,24 @@ void MDEntity::handle_event( SDL_Event& e )
     } 
 }
 
-bool MDEntity::check_collision( SDL_Rect& rect )
+bool MDEntity::check_collision_pixie( Pixie& pixie )
 {
+    Circle circ = pixie.get_circ();
+    long long dst = ( cen_x - circ.cen_x ) * ( cen_x - circ.cen_x )
+                    + ( cen_y - circ.cen_y ) * ( cen_y - circ.cen_y );
+    if( dst >  ( cur_rad + circ.rad ) * ( cur_rad + circ.rad ) )
+    {
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+}
+
+bool MDEntity::check_collision_obstcl( Obstacle& obstacle )
+{
+    SDL_Rect rect = obstacle.get_rect();
     int clos_x;
     int clos_y;
 
@@ -136,8 +138,8 @@ bool MDEntity::check_collision( SDL_Rect& rect )
     }
 }
 
-bool MDEntity::move( int max_width, int max_height, Obstacle obstacles[],
-                     int num_obstcls )
+int MDEntity::move( int max_width, int max_height, Obstacle obstacles[],
+                     int num_obstcls, Pixie pixies[], int num_pixies )
 {
     cen_x += vel_x;
     // If a collision occurred, move back
@@ -169,14 +171,27 @@ bool MDEntity::move( int max_width, int max_height, Obstacle obstacles[],
     {
         if( obstacles[i].is_active() )
         {
-            if( check_collision( obstacles[i].get_rect() ) )
+            if( check_collision_obstcl( obstacles[i] ) )
             {
-                return false;
+                return NEG_INF;
             }
         }
     }
 
-    return true;
+    // Check for pixie collisions
+    for( int i = 0; i < num_pixies; ++i )
+    {
+        if( pixies[i].is_active() )
+        {
+            if( check_collision_pixie( pixies[i] ) )
+            {
+                pixies[i].incapacitate();
+                return 1;
+            }
+        }
+    }
+
+    return 0;
 }
 
 bool comp( int a, int b )
