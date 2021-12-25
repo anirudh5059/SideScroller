@@ -8,7 +8,7 @@ class TDEntity
 {
   public:
     TDEntity();
-    virtual void render( SDL_Renderer *renderer ) = 0;
+    void render();
     virtual void move( int max_width, int max_height ) = 0;
     void incapacitate();
     void resuscitate();
@@ -27,7 +27,7 @@ class Obstacle : public TDEntity
 {
   public:
     Obstacle();
-    void render( SDL_Renderer* renderer );
+    void render();
     void move( int max_width, int max_height );
     void incapacitate();
     void resuscitate( int _x, int _y, int _w, int _h, int _vel_x, int vel_y );
@@ -51,7 +51,7 @@ class Pixie : public TDEntity
 {
   public:
     Pixie();
-    void render( SDL_Renderer* renderer );
+    void render( SDL_Renderer *renderer );
     void move( int max_width, int max_height );
     void incapacitate();
     void resuscitate( int _cen_x, int _cen_y, int _rad, int _vel_x,

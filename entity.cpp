@@ -3,6 +3,7 @@
 #include"obstacle.hpp"
 #include"utility.hpp"
 #include<algorithm>
+#include "consts.hpp"
 
 extern const int NEG_INF;
 
@@ -139,7 +140,7 @@ bool MDEntity::check_collision_obstcl( Obstacle& obstacle )
 }
 
 int MDEntity::move( int max_width, int max_height, Obstacle obstacles[],
-                     int num_obstcls, Pixie pixies[], int num_pixies )
+                    Pixie pixies[] )
 {
     cen_x += vel_x;
     // If a collision occurred, move back
@@ -167,7 +168,7 @@ int MDEntity::move( int max_width, int max_height, Obstacle obstacles[],
     }
 
     // Check for collisions amongst all obstacles
-    for( int i = 0; i < num_obstcls; ++i )
+    for( int i = 0; i < MAX_OBSTCLS; ++i )
     {
         if( obstacles[i].is_active() )
         {
@@ -179,7 +180,7 @@ int MDEntity::move( int max_width, int max_height, Obstacle obstacles[],
     }
 
     // Check for pixie collisions
-    for( int i = 0; i < num_pixies; ++i )
+    for( int i = 0; i < MAX_PIXIES; ++i )
     {
         if( pixies[i].is_active() )
         {

@@ -1,5 +1,6 @@
 #include<SDL.h>
 #include<SDL_image.h>
+#include<SDL_ttf.h>
 #include<string>
 #include"texture.hpp"
 
@@ -36,7 +37,7 @@ int Texture::get_height()
     return height;
 }
 
-bool Texture::load_path( std::string path, bool color_key )
+bool Texture::load_path( std::string path, int color_key )
 {
     // First create an SDL_Surface, then create an SDL_Texture from that which
     // will be rendered in the GPU hardware
@@ -51,10 +52,15 @@ bool Texture::load_path( std::string path, bool color_key )
     {
         // Color keying allows us to specify which color in the surface to
         // treat as transparent while rendering
-        if( color_key )
+        if( color_key == 1 )
         {
 	        SDL_SetColorKey( local_surface, SDL_TRUE,
                         SDL_MapRGB( local_surface->format, 0x00, 0x00, 0x00 ) );
+        }
+        if( color_key == 2 )
+        {
+	        SDL_SetColorKey( local_surface, SDL_TRUE,
+                        SDL_MapRGB( local_surface->format, 0xFF, 0xFF, 0xFF ) );
         }
 
         //Converting surface to texture
@@ -82,7 +88,7 @@ void Texture::render( int x, int y, SDL_Rect* clip, SDL_Rect* out )
     SDL_Rect render_quad = { x, y, width, height };
 
     // If output dimensions are defined, use them
-    if( out != NULL)
+    if( out != NULL )
     {
         render_quad.w = out->w;
         render_quad.h = out->h;
@@ -95,4 +101,45 @@ void Texture::render( int x, int y, SDL_Rect* clip, SDL_Rect* out )
     }
     // Perform the actual rendering
     SDL_RenderCopy( renderer, raw_texture, clip, &render_quad );
+}
+
+bool Texture::load_from_rendered_text( std::string& texture_text,
+                                       SDL_Color& text_color, TTF_Font* font )
+{
+    //Get rid of preexisting texture
+    free();
+
+    //Render text surface
+    SDL_Surface* text_surface = TTF_RenderText_Solid( font,
+                                                      texture_text.c_str(),
+                                                      text_color );
+    if( text_surface == NULL )
+    {
+        printf( "Unable to render text surface! SDL_ttf Error: %s\n",
+                TTF_GetError() );
+    }
+    else
+    {
+        //Create texture from surface pixels
+        raw_texture = SDL_CreateTextureFromSurface( renderer, text_surface );
+        if( raw_texture == NULL )
+        {
+            printf( "Unable to create texture from rendered text! SDL Error:" 
+                    "%s\n",
+                    SDL_GetError() );
+        }
+        else
+        {
+            //Get image dimensions
+            width = text_surface->w;
+            height = text_surface->h;
+        }
+
+        //Get rid of old surface
+        SDL_FreeSurface( text_surface );
+    }
+    
+    //Return success
+    bool success = ( raw_texture != NULL );
+    return success;
 }

@@ -1,6 +1,7 @@
 #include<SDL.h>
 #include"obstacle.hpp"
 #include<vector>
+#include "consts.hpp"
 
 #ifndef __MDENTITY_H__
 #define __MDENTITY_H__
@@ -9,8 +10,8 @@ class MDEntity
 {
   public:
     // Maximum axial velocity of entity
-    static const int AX_VEL = 5;
-    static const int RAD_VEL = 3;
+    int AX_VEL = ENT_AX_VEL;
+    int RAD_VEL = ENT_RAD_VEL;
     MDEntity( int _min_radius, int _max_radius );
     void populate( int x, int y, int max_width, int max_height );
     void render( SDL_Renderer* renderer);
@@ -18,7 +19,7 @@ class MDEntity
     void handle_event( SDL_Event& e );
     // TODO: Add collision detection logic to move function
     int move( int max_width, int max_height, Obstacle obstacles[],
-               int num_obstcls, Pixie pixies[], int num_pixies );
+              Pixie pixies[] );
     bool check_collision_obstcl( Obstacle& obstacle );
     bool check_collision_pixie( Pixie& pixie);
     int get_min_rad();

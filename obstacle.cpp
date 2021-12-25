@@ -1,6 +1,7 @@
 #include<SDL.h>
 #include"obstacle.hpp"
 #include"utility.hpp"
+#include "consts.hpp"
 
 TDEntity::TDEntity() :  vel_x( 0 ), vel_y( 0 ), active( false ),
                         render_tex( NULL ) {}
@@ -72,11 +73,18 @@ void Obstacle::move( int max_width, int max_height )
     }
 }
 
-void Obstacle::render( SDL_Renderer* renderer )
+void Obstacle::render()
 {
     if( active )
     {
-        ( *render_tex ).render( rect.x, rect.y, NULL, &rect );
+        if( render_tex != NULL )
+        {
+            render_tex->render( rect.x, rect.y, NULL, &rect );
+        }
+        else
+        {
+            printf( "rendering texture not set for obstacle!\n" );
+        }
     }
 }
 
@@ -125,7 +133,20 @@ void Pixie::move( int max_width, int max_height )
 
 void Pixie::render( SDL_Renderer* renderer )
 {
-    draw_circle( renderer, &circ );
+    if( active )
+        {
+        SDL_Rect pix_rect = { 0, 0, 2 * PIXIE_RAD, 2 * PIXIE_RAD };
+        if( render_tex != NULL )
+        {
+            render_tex->render( circ.cen_x - circ.rad, circ.cen_y - circ.rad,
+                                    NULL, &pix_rect );
+        }
+        else
+        {
+            //printf( "rendering texture not set for pixie!\n" );
+        }
+        //draw_circle( renderer, &circ );
+    }
 }
 
 Circle& Pixie::get_circ()

@@ -1,5 +1,6 @@
 #include<SDL.h>
 #include<SDL_image.h>
+#include<SDL_ttf.h>
 #include<string>
 #include<vector>
 #include "entity.hpp"
@@ -7,13 +8,11 @@
 #include "texture.hpp"
 #include "consts.hpp"
 
-const int SCREEN_WIDTH=640;
-const int SCREEN_HEIGHT=480;
 
-SDL_Window* glob_win;
-SDL_Renderer* glob_renderer;
+SDL_Window* glob_win = NULL;
+SDL_Renderer* glob_renderer = NULL;
 
-bool init( bool png_load=false )
+bool init( bool png_load=false, bool ttf_load=false )
 {
     bool init = true;
 
@@ -65,6 +64,18 @@ bool init( bool png_load=false )
                        init = false;
                    }
                 }
+                if( ttf_load )
+                {
+                    //Initialize SDL_ttf
+                    if( TTF_Init() == -1 )
+                    {
+                        printf( "SDL_ttf could not initialize! SDL_ttf Error:"
+                                "%s\n",
+                                TTF_GetError() );
+                        init = false;
+                    }
+
+                }
             }
         }
     }    
@@ -72,16 +83,37 @@ bool init( bool png_load=false )
 }
 
 bool load( Texture& back, Texture& sprite, std::string path_back,
-           std::string path_sprite )
+           std::string path_sprite, Texture& pix_sprite, std::string path_pix,
+           TTF_Font*& font, std::string path_font ) 
 {
-    if( !back.load_path( path_back.c_str() ) )
+    //Loading success flag
+    bool success = true;
+    if( ! back.load_path( path_back.c_str() ) )
     {
         printf( "Error loading background\n" );
+        success = false;
     }
-    if( !sprite.load_path( path_sprite.c_str(), true ) )
+
+    if( ! sprite.load_path( path_sprite.c_str(), 1 ) )
     {
         printf( "Error loading column sprite\n" );
+        success = false;
     }
+    if( ! pix_sprite.load_path( path_pix.c_str(), 1 ) )
+    {
+        printf( "Error loading pixie sprite\n" );
+        success = false;
+    }
+
+    //Open the font
+    font = TTF_OpenFont( path_font.c_str(), 12 );
+    if( font == NULL )
+    {
+        printf( "Failed to load font! SDL_ttf Error: %s\n", TTF_GetError() );
+        success = false;
+    }
+
+    return success;
 }
 
 void inc_mod( int& idx, int base )
@@ -91,7 +123,7 @@ void inc_mod( int& idx, int base )
 
 void generate_entities( int& obs_idx, int& pix_idx, Obstacle obstacles[], 
                         Pixie pixies[], Texture& obstcl_sprite, 
-                        bool obstcl_ping )
+                        Texture& pixie_sprite, bool obstcl_ping )
 {
     int pix_pos_y = 0;
     if( obstcl_ping )
@@ -121,12 +153,13 @@ void generate_entities( int& obs_idx, int& pix_idx, Obstacle obstacles[],
     }
     pixies[ pix_idx ].resuscitate( OBSTCL_X, pix_pos_y, PIXIE_RAD,
                                    OBSTCL_VEL, IMMOBILE_VEL );
+    pixies[ pix_idx ].attach_sprite( &pixie_sprite );
     inc_mod( pix_idx, MAX_PIXIES );
 }
 
 int main()
 {
-    if ( !init( true) )
+    if ( !init( true, true ) )
     {
 
         printf( "Could not initialize, exiting\n" );
@@ -135,8 +168,16 @@ int main()
 
     Texture background( glob_renderer ); 
     Texture sprite( glob_renderer ); 
-    
-    load( background, sprite, "images/back2.png", "images/column_sprite.png" );
+    Texture pix_sprite( glob_renderer ); 
+    Texture font_tex( glob_renderer );
+    TTF_Font* font;
+
+    if( ! load( background, sprite, "images/blue-texture2.png", 
+                "images/column_sprite.png", pix_sprite, "images/pix_sprite.png",
+                font, "fonts/ARCADECLASSIC.ttf" ) )
+    {
+        printf( "Error in loading function, check!\n"  );
+    }
 
     MDEntity ent( ENT_MIN_R, ENT_MAX_R );
     ent.populate( ENT_X, ENT_Y, SCREEN_WIDTH, SCREEN_HEIGHT );
@@ -157,6 +198,7 @@ int main()
     SDL_Event e;
     Uint32 start_ticks = 0;
     int interval_count = 0;
+    SDL_Color text_color = { 0, 0, 0 };
     srand(SDL_GetTicks());
     bool quit = false;
 
@@ -183,14 +225,13 @@ int main()
         {
             interval_count++;
             bool obstcl_ping = false;
-            if( interval_count > 4 )
+            if( interval_count > 14 )
             {
                 obstcl_ping = true;
                 interval_count = 0;
             }
-            start_ticks = SDL_GetTicks();
             generate_entities( obs_idx, pix_idx, obstacles, pixies,
-                               sprite, obstcl_ping );
+                               sprite, pix_sprite, obstcl_ping );
             // Debug
             //printf( "The current obstacle Index %d\n", obs_idx );
             /*
@@ -206,6 +247,7 @@ int main()
             }
             obstacles.push_back( Obstacle(600, obstcl_pos_y, 20, obstcl_height ) );
             */
+            start_ticks = SDL_GetTicks();
         }
 
         // Move the obstacle
@@ -221,8 +263,7 @@ int main()
 
         //obstcl.move()
         // Move our entity around
-        move_res = ent.move( SCREEN_WIDTH, SCREEN_HEIGHT, obstacles,
-                             MAX_OBSTCLS, pixies, MAX_PIXIES );
+        move_res = ent.move( SCREEN_WIDTH, SCREEN_HEIGHT, obstacles, pixies );
 
         if( move_res == NEG_INF )
         {
@@ -232,6 +273,7 @@ int main()
         {
             score += move_res;
         }
+
 
         // Clear screen
         SDL_SetRenderDrawColor( glob_renderer, 0xFF, 0xFF, 0xFF, 0xFF);
@@ -245,13 +287,18 @@ int main()
         // Evening Blue
         //SDL_SetRenderDrawColor( glob_renderer, 0x01, 0x4F, 0x94, 0xFF);
         // Light blue
-        SDL_SetRenderDrawColor( glob_renderer, 0xAD, 0xD8, 0xE6, 0xFF);
+        //SDL_SetRenderDrawColor( glob_renderer, 0xAD, 0xD8, 0xE6, 0xFF);
+        // white
         //SDL_SetRenderDrawColor( glob_renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+        // Pastel red
+        SDL_SetRenderDrawColor( glob_renderer, 0xFF, 0x69, 0x61, 0xFF);
+        // Red
+        //SDL_SetRenderDrawColor( glob_renderer, 0xFF, 0x00, 0x00, 0xFF);
 
         // Render all obstacles
         for( int i = 0; i < MAX_OBSTCLS; ++i )
         {
-            obstacles[i].render( glob_renderer );
+            obstacles[i].render();
         }
 
         for( int i = 0; i < MAX_PIXIES; ++i )
@@ -260,6 +307,16 @@ int main()
         }
         //obstcl.render( glob_renderer );
         ent.render( glob_renderer );
+        std::string score_str = pre_score + std::to_string( score );
+        SDL_Rect text_rect = { 0, 0, SCORE_WIDTH, SCORE_HEIGHT };
+        if( font_tex.load_from_rendered_text( score_str, text_color, font ) )
+        {
+            font_tex.render( 0, 0, NULL, &text_rect );
+        }
+        else
+        {
+            printf( "Failed to render text texture!\n" );
+        }
 
         // Update the renderer
         SDL_RenderPresent( glob_renderer );
