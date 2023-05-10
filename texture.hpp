@@ -1,5 +1,6 @@
 #include<SDL.h>
 #include<string>
+#include<memory>
 #include<SDL_ttf.h>
 
 #ifndef __TEXTURE_H__
@@ -8,21 +9,33 @@
 class Texture
 {
   public:
-    Texture( SDL_Renderer* lRenderer );
-    ~Texture();
-    bool load_path( std::string path, int color_key = 0 );
-    bool load_from_rendered_text( std::string& texture_text,
-                                  SDL_Color& text_color, TTF_Font* font );
+    std::unique_ptr<SDL_Texture, void (*)( SDL_Texture* )> texture;
+    Texture( std::shared_ptr<SDL_Renderer> renderer );
+    std::shared_ptr<SDL_Renderer> renderer;
     void free();
     void render( int x, int y, SDL_Rect* clip, SDL_Rect* out );
+    void texture_from_surface( std::unique_ptr<SDL_Surface,
+            void (*)( SDL_Surface* )> surf );
     int get_width();
     int get_height();
-  private:
-    SDL_Texture* raw_texture;
-    SDL_Renderer* renderer;
     int width;
     int height;
+  private:
+};
 
+class ObjectTexture : public Texture
+{
+  public:
+    ObjectTexture( std::shared_ptr<SDL_Renderer> renderer );
+    void load_path( std::string path, int color_key = 0 );
+};
+
+class FontTexture : public Texture
+{
+  public:
+    FontTexture( std::shared_ptr<SDL_Renderer> renderer );
+    void load_text( std::string texture_text,
+                                  SDL_Color text_color, TTF_Font* font );
 };
 
 #endif

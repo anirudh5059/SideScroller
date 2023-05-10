@@ -1,10 +1,11 @@
 #include<SDL.h>
+#include<stdexcept>
 #include"obstacle.hpp"
 #include"utility.hpp"
 #include "consts.hpp"
 
-TDEntity::TDEntity() :  vel_x( 0 ), vel_y( 0 ), active( false ),
-                        render_tex( NULL ) {}
+TDEntity::TDEntity( std::shared_ptr<SDL_Renderer> renderer) :  vel_x( 0 ),
+    vel_y( 0 ), active( false ), sprite( renderer ) {}
 
 
 bool TDEntity::is_active()
@@ -12,19 +13,17 @@ bool TDEntity::is_active()
     return active;
 }
 
-void TDEntity::attach_sprite( Texture* tex_ref )
-{
-    render_tex = tex_ref;
-}
+// void TDEntity::attach_sprite( Texture* tex_ref )
+// {
+//     render_tex = tex_ref;
+// }
 
 void TDEntity::incapacitate() {}
 
 void TDEntity::resuscitate() {}
 
-Obstacle::Obstacle() : rect{ 0, 0, 0, 0 }
-{
-    // ctor of base class is automatically called if it takes no arguments!
-}
+Obstacle::Obstacle( std::shared_ptr<SDL_Renderer> renderer ) : TDEntity( renderer ),
+    rect{ 0, 0, 0, 0 } {}
 
 SDL_Rect& Obstacle::get_rect()
 {
@@ -77,13 +76,13 @@ void Obstacle::render()
 {
     if( active )
     {
-        if( render_tex != NULL )
+        if( sprite.texture )
         {
-            render_tex->render( rect.x, rect.y, NULL, &rect );
+            sprite.render( rect.x, rect.y, NULL, &rect );
         }
         else
         {
-            printf( "rendering texture not set for obstacle!\n" );
+            throw std::runtime_error( "rendering texture not set for obstacle" );
         }
     }
 }
@@ -91,7 +90,8 @@ void Obstacle::render()
 Circle::Circle( int _cen_x, int _cen_y, int _rad ) : cen_x( _cen_x ),
         cen_y( _cen_y ), rad( _rad ) {}
 
-Pixie::Pixie() : circ{ 0, 0, 0 } {}
+Pixie::Pixie( std::shared_ptr<SDL_Renderer> renderer ): TDEntity( renderer ),
+    circ{ 0, 0, 0 } {}
 
 void Pixie::incapacitate()
 {
@@ -131,21 +131,20 @@ void Pixie::move( int max_width, int max_height )
     }
 }
 
-void Pixie::render( SDL_Renderer* renderer )
+void Pixie::render()
 {
     if( active )
         {
         SDL_Rect pix_rect = { 0, 0, 2 * PIXIE_RAD, 2 * PIXIE_RAD };
-        if( render_tex != NULL )
+        if( sprite.texture )
         {
-            render_tex->render( circ.cen_x - circ.rad, circ.cen_y - circ.rad,
+            sprite.render( circ.cen_x - circ.rad, circ.cen_y - circ.rad,
                                     NULL, &pix_rect );
         }
         else
         {
-            //printf( "rendering texture not set for pixie!\n" );
+            throw( "rendering texture not set for obstacle" );
         }
-        //draw_circle( renderer, &circ );
     }
 }
 

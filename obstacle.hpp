@@ -7,34 +7,34 @@
 class TDEntity
 {
   public:
-    TDEntity();
+    TDEntity( std::shared_ptr<SDL_Renderer> renderer );
     void render();
     virtual void move( int max_width, int max_height ) = 0;
     void incapacitate();
     void resuscitate();
     bool is_active();
-    void attach_sprite( Texture* sprite );
+    ObjectTexture sprite; 
+    // void attach_sprite( Texture* sprite );
 
   protected:
     int vel_x;
     int vel_y;
     bool active;
-    Texture* render_tex;
 };
 
 // Obstacle of rectangular shape
 class Obstacle : public TDEntity
 {
   public:
-    Obstacle();
+    Obstacle( std::shared_ptr<SDL_Renderer> renderer );
     void render();
     void move( int max_width, int max_height );
     void incapacitate();
     void resuscitate( int _x, int _y, int _w, int _h, int _vel_x, int vel_y );
     SDL_Rect& get_rect();
+    SDL_Rect rect;
 
   protected:
-    SDL_Rect rect;
 };
 
 // Generic Circular shape
@@ -50,8 +50,8 @@ class Circle
 class Pixie : public TDEntity
 {
   public:
-    Pixie();
-    void render( SDL_Renderer *renderer );
+    Pixie( std::shared_ptr<SDL_Renderer> renderer );
+    void render();
     void move( int max_width, int max_height );
     void incapacitate();
     void resuscitate( int _cen_x, int _cen_y, int _rad, int _vel_x,

@@ -2,30 +2,37 @@
 #include<SDL_image.h>
 #include<SDL_ttf.h>
 #include<string>
+#include<memory>
+#include<stdexcept>
+#include<iostream>
 #include"texture.hpp"
+#include "consts.hpp"
 
-Texture::Texture( SDL_Renderer* lRenderer )
+void delete_texture( SDL_Texture* texture )
 {
-    raw_texture = NULL;
-    width = 0;
-    height = 0;
-    renderer = lRenderer;
-}
-
-Texture::~Texture()
-{
-    free();
-}
-
-void Texture::free()
-{
-    if( raw_texture != NULL )
+    if( texture )
     {
-        SDL_DestroyTexture( raw_texture );
-        width = 0;
-        height = 0;
+        SDL_DestroyTexture( texture );
     }
 }
+
+Texture::Texture( std::shared_ptr<SDL_Renderer> _renderer ):
+    texture(nullptr, delete_texture), width(0), height(0), renderer(_renderer) {}
+
+// Texture::~Texture()
+// {
+//     free();
+// }
+
+// void Texture::free()
+// {
+//     if( texture )
+//     {
+//         SDL_DestroyTexture( raw_texture );
+//         width = 0;
+//         height = 0;
+//     }
+// }
 
 int Texture::get_width()
 {
@@ -37,53 +44,78 @@ int Texture::get_height()
     return height;
 }
 
-bool Texture::load_path( std::string path, int color_key )
+void ObjectTexture::load_path( std::string path, int color_key )
 {
     // First create an SDL_Surface, then create an SDL_Texture from that which
     // will be rendered in the GPU hardware
-    SDL_Texture* local_texture = NULL;
-    SDL_Surface* local_surface = IMG_Load( path.c_str() );
-    if( local_surface == NULL )
+    
+    std::unique_ptr<SDL_Surface, void (*)( SDL_Surface* )> local_surface(
+            IMG_Load( path.c_str() ),
+            [] (SDL_Surface* surf) { SDL_FreeSurface( surf ); } );
+    if( !local_surface )
     {
        printf( "Could not load surface %s!, SDL error %s\n", path.c_str(),
                 SDL_GetError() ); 
+       throw std::runtime_error( "Could not load surface passed" );
     }
-    else
-    {
-        // Color keying allows us to specify which color in the surface to
-        // treat as transparent while rendering
-        if( color_key == 1 )
-        {
-	        SDL_SetColorKey( local_surface, SDL_TRUE,
-                        SDL_MapRGB( local_surface->format, 0x00, 0x00, 0x00 ) );
-        }
-        if( color_key == 2 )
-        {
-	        SDL_SetColorKey( local_surface, SDL_TRUE,
-                        SDL_MapRGB( local_surface->format, 0xFF, 0xFF, 0xFF ) );
-        }
 
-        //Converting surface to texture
-        local_texture = SDL_CreateTextureFromSurface( renderer, local_surface );
-        if( local_texture == NULL )
-        {
-            printf( "Could not create texture from surface %s!, SDL Error %s\n",
-                    path.c_str(), SDL_GetError() );
-        }
-        else
-        {
-            width = local_surface->w;
-            height = local_surface->h; 
-        }
-        // Now that the requirement of SDL_Surface is complete, free it
-        SDL_FreeSurface( local_surface );
+    // Color keying allows us to specify which color in the surface to
+    // treat as transparent while rendering
+    if( color_key == 1 )
+    {
+        SDL_SetColorKey( local_surface.get(), SDL_TRUE,
+                    SDL_MapRGB( local_surface->format, 0x00, 0x00, 0x00 ) );
     }
-    raw_texture = local_texture;
-    return raw_texture != NULL;
+    if( color_key == 2 )
+    {
+        SDL_SetColorKey( local_surface.get(), SDL_TRUE,
+                    SDL_MapRGB( local_surface->format, 0xFF, 0xFF, 0xFF ) );
+    }
+
+    //Converting surface to texture
+    try
+    {
+        texture_from_surface( std::move( local_surface ) );
+    }
+    catch( ... )
+    {
+        throw;
+    }
+    // texture = std::unique_ptr< SDL_Texture, void (*)( SDL_Texture* texture ) >(
+    //         SDL_CreateTextureFromSurface( renderer.get(), local_surface.get() ),
+    //         delete_texture );
+    // if( !texture )
+    // {
+    //     printf( "Could not create texture from surface %s!, SDL Error %s\n",
+    //             path.c_str(), SDL_GetError() );
+    //     raise std::runtime_error( "Could not create texture from surface" );
+    // }
+    // Now that the requirement of SDL_Surface is complete, free it
+    // No longer required since we are using unique_ptr for memory management.
+    //SDL_FreeSurface( local_surface );
+
+    // raw_texture = local_texture;
+    // return raw_texture != NULL;
+}
+
+void Texture::texture_from_surface(
+        std::unique_ptr<SDL_Surface, void (*)( SDL_Surface* )> surf )
+{
+    texture = std::unique_ptr< SDL_Texture, void (*)( SDL_Texture* texture ) > (
+            SDL_CreateTextureFromSurface( renderer.get(), surf.get() ),
+            delete_texture );
+    if( !texture )
+    {
+        throw std::runtime_error( "Could not create texture from surface" );
+    }
+    width = surf->w;
+    height = surf->h;
+    
 }
 
 void Texture::render( int x, int y, SDL_Rect* clip, SDL_Rect* out )
 {
+    // printf("output rectangle width: %d Height %d", out->w, out->h );
     // Stack variable so we don't have to free it!
     SDL_Rect render_quad = { x, y, width, height };
 
@@ -100,46 +132,46 @@ void Texture::render( int x, int y, SDL_Rect* clip, SDL_Rect* out )
         render_quad.h = clip->h;
     }
     // Perform the actual rendering
-    SDL_RenderCopy( renderer, raw_texture, clip, &render_quad );
+    SDL_RenderCopy( renderer.get(), texture.get(), clip, &render_quad );
 }
 
-bool Texture::load_from_rendered_text( std::string& texture_text,
-                                       SDL_Color& text_color, TTF_Font* font )
+void FontTexture::load_text( std::string texture_text,
+                                       SDL_Color text_color, TTF_Font* font )
 {
-    //Get rid of preexisting texture
-    free();
+    // Get rid of preexisting texture
+    // free();
 
     //Render text surface
-    SDL_Surface* text_surface = TTF_RenderText_Solid( font,
-                                                      texture_text.c_str(),
-                                                      text_color );
-    if( text_surface == NULL )
+    std::unique_ptr<SDL_Surface, void (*)( SDL_Surface* )> text_surface(
+            TTF_RenderText_Solid( font, texture_text.c_str(), text_color ),
+            [] (SDL_Surface* surf) { SDL_FreeSurface( surf ); } );
+    if( !text_surface )
     {
         printf( "Unable to render text surface! SDL_ttf Error: %s\n",
                 TTF_GetError() );
+        throw std::runtime_error( "Unable to render text surface in SDL_ttf" );
     }
-    else
+    // Create texture from surface pixels
+    try
     {
-        //Create texture from surface pixels
-        raw_texture = SDL_CreateTextureFromSurface( renderer, text_surface );
-        if( raw_texture == NULL )
-        {
-            printf( "Unable to create texture from rendered text! SDL Error:" 
-                    "%s\n",
-                    SDL_GetError() );
-        }
-        else
-        {
-            //Get image dimensions
-            width = text_surface->w;
-            height = text_surface->h;
-        }
-
-        //Get rid of old surface
-        SDL_FreeSurface( text_surface );
+        texture_from_surface( std::move( text_surface ) );
     }
-    
+    catch( ... )
+    {
+        throw;
+    }
+
+    // Get image dimensions
+
+    // Get rid of old surface
+    // No longer required since we are using unique_ptr.
+    // SDL_FreeSurface( text_surface );
     //Return success
-    bool success = ( raw_texture != NULL );
-    return success;
+    // bool success = ( raw_texture != NULL );
+    // return success;
 }
+ObjectTexture::ObjectTexture( std::shared_ptr<SDL_Renderer> _renderer ):
+    Texture(_renderer) {}
+
+FontTexture::FontTexture( std::shared_ptr<SDL_Renderer> _renderer ):
+    Texture(_renderer) {}

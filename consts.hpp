@@ -1,3 +1,5 @@
+#include<string>
+
 #ifndef __GLOBAL_CONSTS__
 #define __GLOBAL_CONSTS__
 

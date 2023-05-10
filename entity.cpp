@@ -1,15 +1,22 @@
 #include<SDL.h>
-#include"entity.hpp"
-#include"obstacle.hpp"
-#include"utility.hpp"
 #include<algorithm>
+#include "entity.hpp"
+#include "obstacle.hpp"
+#include "utility.hpp"
 #include "consts.hpp"
 
 extern const int NEG_INF;
 
-MDEntity::MDEntity( int _min_radius, int _max_radius ) 
-    : cen_x(0), cen_y(0), min_rad(_min_radius), max_rad(_max_radius),
-      vel_x(0), vel_y(0), rad_inc_rate(0) {}
+MDEntity::MDEntity( int _min_radius, int _max_radius, int _cen_x, int _cen_y,
+                    int max_width, int max_height )
+    : cen_x(_cen_x), cen_y(_cen_y), min_rad(_min_radius), max_rad(_max_radius),
+      vel_x(0), vel_y(0), rad_inc_rate(0)
+{
+    srand( SDL_GetTicks() );
+    int eff_max_rad = std::min( { max_rad, cen_x, max_width - cen_x, cen_y,
+                                  max_height - cen_y } );
+    cur_rad = min_rad + rand() % ( eff_max_rad - min_rad + 1 );
+}
 
 int MDEntity::get_min_rad()
 {
@@ -31,9 +38,9 @@ int MDEntity::get_cur_rad()
     return cur_rad;
 }
 
-void MDEntity::render( SDL_Renderer* renderer )
+void MDEntity::render( std::shared_ptr<SDL_Renderer> renderer )
 {
-    draw_circle( renderer, this );
+    draw_circle( renderer, *this );
 }
 
 void MDEntity::handle_event( SDL_Event& e )
@@ -43,12 +50,12 @@ void MDEntity::handle_event( SDL_Event& e )
     {
         switch( e.key.keysym.sym )
         {
-            case SDLK_UP: vel_y -= AX_VEL; break;
-            case SDLK_DOWN: vel_y += AX_VEL; break;
-            case SDLK_LEFT: vel_x -= AX_VEL; break;
-            case SDLK_RIGHT: vel_x += AX_VEL; break;
-            case SDLK_q: rad_inc_rate += RAD_VEL; break;
-            case SDLK_w: rad_inc_rate -= RAD_VEL; break;
+            case SDLK_w: vel_y -= AX_VEL; break;
+            case SDLK_s: vel_y += AX_VEL; break;
+            case SDLK_a: vel_x -= AX_VEL; break;
+            case SDLK_d: vel_x += AX_VEL; break;
+            case SDLK_9: rad_inc_rate += RAD_VEL; break;
+            case SDLK_0: rad_inc_rate -= RAD_VEL; break;
         }
     } 
 
@@ -57,12 +64,12 @@ void MDEntity::handle_event( SDL_Event& e )
     {
         switch( e.key.keysym.sym )
         {
-            case SDLK_UP: vel_y += AX_VEL; break;
-            case SDLK_DOWN: vel_y -= AX_VEL; break;
-            case SDLK_LEFT: vel_x += AX_VEL; break;
-            case SDLK_RIGHT: vel_x -= AX_VEL; break;
-            case SDLK_q: rad_inc_rate -= RAD_VEL; break;
-            case SDLK_w: rad_inc_rate += RAD_VEL; break;
+            case SDLK_w: vel_y += AX_VEL; break;
+            case SDLK_s: vel_y -= AX_VEL; break;
+            case SDLK_a: vel_x += AX_VEL; break;
+            case SDLK_d: vel_x -= AX_VEL; break;
+            case SDLK_9: rad_inc_rate -= RAD_VEL; break;
+            case SDLK_0: rad_inc_rate += RAD_VEL; break;
         }
     } 
 }
@@ -139,8 +146,8 @@ bool MDEntity::check_collision_obstcl( Obstacle& obstacle )
     }
 }
 
-int MDEntity::move( int max_width, int max_height, Obstacle obstacles[],
-                    Pixie pixies[] )
+int MDEntity::move( int max_width, int max_height, std::vector<Obstacle>& obstacles,
+                    std::vector<Pixie>& pixies )
 {
     cen_x += vel_x;
     // If a collision occurred, move back
@@ -200,14 +207,14 @@ bool comp( int a, int b )
     return( a < b );
 }
 
-void MDEntity::populate( int pos_x, int pos_y, int max_height, int max_width )
-{
-    cen_x = pos_x;
-    cen_y = pos_y;
-    srand( SDL_GetTicks() );
-    int eff_max_rad = std::min( { max_rad, cen_x, max_width - cen_x, cen_y,
-                                  max_height - cen_y } );
-    cur_rad = min_rad + rand() % ( eff_max_rad - min_rad + 1 );
-    // Debug
-    //printf( "The current radius chosen is %d\n", cur_rad );
-}
+// void MDEntity::populate( int pos_x, int pos_y, int max_height, int max_width )
+// {
+//     cen_x = pos_x;
+//     cen_y = pos_y;
+//     srand( SDL_GetTicks() );
+//     int eff_max_rad = std::min( { max_rad, cen_x, max_width - cen_x, cen_y,
+//                                   max_height - cen_y } );
+//     cur_rad = min_rad + rand() % ( eff_max_rad - min_rad + 1 );
+//     // Debug
+//     //printf( "The current radius chosen is %d\n", cur_rad );
+// }
