@@ -16,10 +16,10 @@
 class GameConstructs {
   private:
     std::unique_ptr<SDL_Window, void (*) ( SDL_Window* )> window;
-    std::shared_ptr<SDL_Renderer> renderer;
     // Obstacle obstacles[ MAX_OBSTCLS ];
     // Pixie pixies[ MAX_PIXIES ];
   public:
+    std::shared_ptr<SDL_Renderer> renderer;
     MDEntity ent;
     std::vector< Obstacle > obstacles;
     std::vector< Pixie > pixies;
@@ -27,6 +27,7 @@ class GameConstructs {
     int pix_idx;
     ObjectTexture background; 
     Score score;
+    SDL_Rect screen_rect;
     GameConstructs();
     ~GameConstructs();
     void init( bool, bool, std::string, std::string, std::string, std::string );

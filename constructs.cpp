@@ -28,7 +28,7 @@ GameConstructs::GameConstructs():
     window( nullptr, delete_window ), renderer( nullptr, delete_renderer ),
     background( renderer ), score( renderer ),
     ent( ENT_MIN_R, ENT_MAX_R, ENT_X, ENT_Y, SCREEN_WIDTH, SCREEN_HEIGHT ),
-    obs_idx(0), pix_idx(0)
+    obs_idx(0), pix_idx(0), screen_rect{ 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT }
 {
     for( int i=0; i<MAX_OBSTCLS; ++i )
     {
@@ -201,17 +201,16 @@ void GameConstructs::render()
     {
         SDL_SetRenderDrawColor( renderer.get(), 0xFF, 0xFF, 0xFF, 0xFF);
         SDL_RenderClear( renderer.get() );
-        SDL_Rect screen_rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
         background.render( 0, 0, NULL, &screen_rect );
         // SDL_SetRenderDrawColor( renderer.get(), 0xFF, 0x69, 0x61, 0xFF);
-        for( int i = 0; i < MAX_OBSTCLS; ++i )
+        for( auto& obs : obstacles )
         {
-            obstacles[i].render();
+            obs.render();
         }
 
-        for( int i = 0; i < MAX_PIXIES; ++i )
+        for( auto& pix : pixies )
         {
-            pixies[i].render();
+            pix.render();
         }
         // Light blue
         SDL_SetRenderDrawColor( renderer.get(), 0xAD, 0xD8, 0xE6, 0xFF);

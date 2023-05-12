@@ -19,21 +19,6 @@ void delete_texture( SDL_Texture* texture )
 Texture::Texture( std::shared_ptr<SDL_Renderer> _renderer ):
     texture(nullptr, delete_texture), width(0), height(0), renderer(_renderer) {}
 
-// Texture::~Texture()
-// {
-//     free();
-// }
-
-// void Texture::free()
-// {
-//     if( texture )
-//     {
-//         SDL_DestroyTexture( raw_texture );
-//         width = 0;
-//         height = 0;
-//     }
-// }
-
 int Texture::get_width()
 {
     return width;
@@ -81,21 +66,6 @@ void ObjectTexture::load_path( std::string path, int color_key )
     {
         throw;
     }
-    // texture = std::unique_ptr< SDL_Texture, void (*)( SDL_Texture* texture ) >(
-    //         SDL_CreateTextureFromSurface( renderer.get(), local_surface.get() ),
-    //         delete_texture );
-    // if( !texture )
-    // {
-    //     printf( "Could not create texture from surface %s!, SDL Error %s\n",
-    //             path.c_str(), SDL_GetError() );
-    //     raise std::runtime_error( "Could not create texture from surface" );
-    // }
-    // Now that the requirement of SDL_Surface is complete, free it
-    // No longer required since we are using unique_ptr for memory management.
-    //SDL_FreeSurface( local_surface );
-
-    // raw_texture = local_texture;
-    // return raw_texture != NULL;
 }
 
 void Texture::texture_from_surface(
@@ -115,7 +85,6 @@ void Texture::texture_from_surface(
 
 void Texture::render( int x, int y, SDL_Rect* clip, SDL_Rect* out )
 {
-    // printf("output rectangle width: %d Height %d", out->w, out->h );
     // Stack variable so we don't have to free it!
     SDL_Rect render_quad = { x, y, width, height };
 
@@ -138,8 +107,6 @@ void Texture::render( int x, int y, SDL_Rect* clip, SDL_Rect* out )
 void FontTexture::load_text( std::string texture_text,
                                        SDL_Color text_color, TTF_Font* font )
 {
-    // Get rid of preexisting texture
-    // free();
 
     //Render text surface
     std::unique_ptr<SDL_Surface, void (*)( SDL_Surface* )> text_surface(
@@ -161,14 +128,6 @@ void FontTexture::load_text( std::string texture_text,
         throw;
     }
 
-    // Get image dimensions
-
-    // Get rid of old surface
-    // No longer required since we are using unique_ptr.
-    // SDL_FreeSurface( text_surface );
-    //Return success
-    // bool success = ( raw_texture != NULL );
-    // return success;
 }
 ObjectTexture::ObjectTexture( std::shared_ptr<SDL_Renderer> _renderer ):
     Texture(_renderer) {}
