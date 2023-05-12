@@ -21,6 +21,6 @@ const int ENT_Y = 100 * scale;
 const int ENT_MIN_R = 20 * scale;
 const int ENT_MAX_R = 120 * scale;
 const int IMMOBILE_VEL = 0;
-const int SCORE_WIDTH = 100 * scale;
-const int SCORE_HEIGHT = 40 * scale;
+const int SCORE_WIDTH = 80 * scale;
+const int SCORE_HEIGHT = 25 * scale;
 const std::string pre_score( "Score " );

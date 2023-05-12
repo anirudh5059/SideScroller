@@ -109,10 +109,10 @@ void GameConstructs::init( bool png_load, bool ttf_load, std::string path_back,
     }
     background.load_path( path_back );
     for( auto& obs : obstacles ) {
-        obs.sprite.load_path( path_sprite, 1 );
+        obs.sprite.load_path( path_sprite );
     }
     for( auto& pix : pixies ) {
-        pix.sprite.load_path( path_pix );
+        pix.sprite.load_path( path_pix, 2 );
     }
 
     //Open the font
@@ -133,7 +133,7 @@ void GameConstructs::generate_environment( bool obstcl_ping )
         obstacles[ obs_idx ].resuscitate( OBSTCL_X, obstcl_pos_y,
                                           OBSTCL_WIDTH, OBSTCL_HEIGHT,
                                           OBSTCL_VEL, IMMOBILE_VEL );
-        std::cout<<"Resuscitated obstacle"<<obs_idx<<"rectangle"<<obstacles[ obs_idx ].rect.w;
+            obstacles[ obs_idx ].rect.w;
         obs_idx = ( obs_idx + 1 ) % MAX_OBSTCLS;
         if( obstcl_pos_y < ( ( SCREEN_HEIGHT - OBSTCL_HEIGHT ) / 2 ) )
         {
@@ -159,14 +159,14 @@ void GameConstructs::generate_environment( bool obstcl_ping )
 
 void GameConstructs::move_environment()
 {
-    for( int i = 0; i < MAX_OBSTCLS; ++i )
+    for( auto& obs : obstacles )
     {
-        obstacles[i].move( SCREEN_WIDTH, SCREEN_HEIGHT );
+        obs.move( SCREEN_WIDTH, SCREEN_HEIGHT );
     }
 
-    for( int i = 0; i < MAX_PIXIES; ++i )
+    for( auto& pix : pixies )
     {
-        pixies[i].move( SCREEN_WIDTH, SCREEN_HEIGHT );
+        pix.move( SCREEN_WIDTH, SCREEN_HEIGHT );
     }
 }
 
@@ -185,8 +185,6 @@ void GameConstructs::move_entity()
 void GameConstructs::render()
 {
 
-    std::string score_str = std::to_string( score.value );
-    SDL_Rect text_rect = { 0, 0, SCORE_WIDTH, SCORE_HEIGHT };
     //SDL_SetRenderDrawColor( constructs.renderer, 0x1F, 0x7D, 0x1F, 0xFF);
     // Evening Blue
     //SDL_SetRenderDrawColor( constructs.renderer, 0x01, 0x4F, 0x94, 0xFF);
@@ -201,12 +199,11 @@ void GameConstructs::render()
 
     try
     {
-        score.font_tex.load_text( std::to_string( score.value ),
-                SDL_Color{ 0,0,0 }, score.font.get() );
         SDL_SetRenderDrawColor( renderer.get(), 0xFF, 0xFF, 0xFF, 0xFF);
         SDL_RenderClear( renderer.get() );
-        background.render( 0, 0, NULL, NULL ); 
-        SDL_SetRenderDrawColor( renderer.get(), 0xFF, 0x69, 0x61, 0xFF);
+        SDL_Rect screen_rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+        background.render( 0, 0, NULL, &screen_rect );
+        // SDL_SetRenderDrawColor( renderer.get(), 0xFF, 0x69, 0x61, 0xFF);
         for( int i = 0; i < MAX_OBSTCLS; ++i )
         {
             obstacles[i].render();
@@ -216,9 +213,12 @@ void GameConstructs::render()
         {
             pixies[i].render();
         }
+        // Light blue
+        SDL_SetRenderDrawColor( renderer.get(), 0xAD, 0xD8, 0xE6, 0xFF);
         ent.render( renderer );
-        score.font_tex.render( 0, 0, NULL, &text_rect );
+        score.render();
     }
+    
     catch(...)
     {
         throw;

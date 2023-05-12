@@ -8,9 +8,11 @@
 class Score {
   public:
     std::unique_ptr< TTF_Font, void (*)( TTF_Font * ) > font;
-    long long value;
+    long long value=0;
     Score( std::shared_ptr<SDL_Renderer> renderer );
     FontTexture font_tex; 
     void init_font( std::string );
+    void render();
+    SDL_Rect text_rect;
 };
 #endif
