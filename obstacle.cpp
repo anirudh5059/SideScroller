@@ -13,11 +13,6 @@ bool TDEntity::is_active()
     return active;
 }
 
-// void TDEntity::attach_sprite( Texture* tex_ref )
-// {
-//     render_tex = tex_ref;
-// }
-
 void TDEntity::incapacitate() {}
 
 void TDEntity::resuscitate() {}
